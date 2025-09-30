@@ -17,18 +17,18 @@
 		<main.basedir>${basedir}/../../..</main.basedir>
 		<java.version>1.8</java.version> <!--java工程版本为1.8-->
 		<resource.delimiter>@</resource.delimiter> <!-- delimiter that doesn't clash with Spring ${} placeholders -->
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding><!--告诉各个构建插件使用utf-8字符编码-->
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding><!--构建后的编码值为utf-8-->
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
 	</properties>
 	<build>
 		<!-- Turn on filtering by default for application properties -->
 		<resources>
-			<resource>
+			<resource><!--定义一个资源目录以及处理方式(过滤,包含/排除等规则),写上去就会被写入到jar包中-->
 				<directory>${basedir}/src/main/resources</directory>
-				<filtering>true</filtering>
-				<includes>
+				<filtering>true</filtering><!--maven资源过滤,会把一下文件中的${}替换为pom.xml或*.properties里的实际值-->
+				<includes><!--白名单,只处理匹配这些Ant风格模式的文件-->
 					<include>**/application*.yml</include>
 					<include>**/application*.yaml</include>
 					<include>**/application*.properties</include>
@@ -36,7 +36,7 @@
 			</resource>
 			<resource>
 				<directory>${basedir}/src/main/resources</directory>
-				<excludes>
+				<excludes><!--排除匹配的文件,不让该条目去处理.效果就是把剩余的配置文件写入jar中-->
 					<exclude>**/application*.yml</exclude>
 					<exclude>**/application*.yaml</exclude>
 					<exclude>**/application*.properties</exclude>

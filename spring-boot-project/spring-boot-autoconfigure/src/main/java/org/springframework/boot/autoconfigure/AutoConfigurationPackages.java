@@ -89,10 +89,15 @@ public abstract class AutoConfigurationPackages {
 	 * @param registry the bean definition registry
 	 * @param packageNames the package names to set
 	 */
+	//这里参数packageNames是从注解标注的类上获取到的包名,这个包是被@SpringBootApplication标注的类所在的包
+	//这是在注册org.springframework.boot.autoconfigure.AutoConfigurationPackages.Register的Bean的元信息, 并且把启动类所在包作为信息传入
 	public static void register(BeanDefinitionRegistry registry, String... packageNames) {
 		if (registry.containsBeanDefinition(BEAN)) {
+			//如果已经存在BEAN, 则直接获取, 然后添加packageNames
 			BeanDefinition beanDefinition = registry.getBeanDefinition(BEAN);
+			// 拿到它的构造器参数配置（Spring BeanDefinition 可以指定构造方法参数）
 			ConstructorArgumentValues constructorArguments = beanDefinition.getConstructorArgumentValues();
+			// 在参数列表的索引 0 位置，添加（或合并）需要扫描的包路径
 			constructorArguments.addIndexedArgumentValue(0, addBasePackages(constructorArguments, packageNames));
 		}
 		else {
@@ -120,6 +125,7 @@ public abstract class AutoConfigurationPackages {
 
 		@Override
 		public void registerBeanDefinitions(AnnotationMetadata metadata, BeanDefinitionRegistry registry) {
+			//将注解标注的元信息传入, 获取到相应的包名
 			register(registry, new PackageImport(metadata).getPackageName());
 		}
 
