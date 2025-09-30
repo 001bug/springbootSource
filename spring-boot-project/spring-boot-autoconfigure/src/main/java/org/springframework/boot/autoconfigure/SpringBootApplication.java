@@ -49,6 +49,7 @@ import org.springframework.data.repository.Repository;
 @Retention(RetentionPolicy.RUNTIME)//表示注解的生命周期,这里Runtime是指运行时起作用
 @Documented
 @Inherited//可以被子类继承该注解
+
 @SpringBootConfiguration//表明该类为配置类,其实就是对Spring的Configuration注解的封装
 @EnableAutoConfiguration//启动自动配置功能
 @ComponentScan(excludeFilters = { @Filter(type = FilterType.CUSTOM, classes = TypeExcludeFilter.class),

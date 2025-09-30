@@ -69,6 +69,7 @@ import org.springframework.util.StringUtils;
  * @since 1.3.0
  * @see EnableAutoConfiguration
  */
+//可以将所有符合条件的@Configuration配置都加载到当前SpringBoot并创建相应的Bean到ioc容器中
 public class AutoConfigurationImportSelector implements DeferredImportSelector, BeanClassLoaderAware,
 		ResourceLoaderAware, BeanFactoryAware, EnvironmentAware, Ordered {
 
@@ -107,19 +108,35 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 	 * @param annotationMetadata the annotation metadata of the configuration class
 	 * @return the auto-configurations that should be imported
 	 */
+	//获得符合条件的自动配置类,避免不必要的资源浪费
 	protected AutoConfigurationEntry getAutoConfigurationEntry(AutoConfigurationMetadata autoConfigurationMetadata,
 			AnnotationMetadata annotationMetadata) {
+		//判断是否配置了spring.boot.enableautoconfiguration属性,默认返回true
 		if (!isEnabled(annotationMetadata)) {
 			return EMPTY_ENTRY;
 		}
+		//获得注解@EnableAutoConfiguration(或其子类注解)上的所有属性信息.
+		//比如: @SpringbootApplication(exclude={DataSourceAutoConfiguration.class}),将会获得exclude的值
 		AnnotationAttributes attributes = getAttributes(annotationMetadata);
+		//得到spring.factories文件配置的所有自动配置类
 		List<String> configurations = getCandidateConfigurations(annotationMetadata, attributes);
+		//移除重复的自动配置类
 		configurations = removeDuplicates(configurations);
+		//得到要排除的自动配置类, 比如注解属性exclude的配置类.@SpringbootApplication(exclude={DataSourceAutoConfiguration.class})
 		Set<String> exclusions = getExclusions(annotationMetadata, attributes);
+		//检查要排除的自动配置类是否在自动配置类列表中,如果不在,则抛出异常
 		checkExcludedClasses(configurations, exclusions);
+		//移除要排除的自动配置类
 		configurations.removeAll(exclusions);
+		//通过各种条件过滤自动配置类,比如判断容器中是否存在某个组件,是否存在某个类等(节省内存),这里是调用AutoConfigurationImportFilter的match方法
+		//来判断是否符合@ConditionalOnBean,@ConditionalOnClass等注解的条件
 		configurations = filter(configurations, autoConfigurationMetadata);
+		/*
+		* 获取了符合条件的自动配置类后,触发AutoConfigurationImportEvent事件,告诉ConditionEvaluationReport条件评估报告器对象来记录
+		* 符合条件的自动配置类.该时间什么时候触发?-->在刷新容器时调用invokeBeanFactoryPostProcessors后置处理器时触发.
+		* */
 		fireAutoConfigurationImportEvents(configurations, exclusions);
+		//将符合条件和要排除的自动配置类封装到AutoConfigurationEntry对象,并返回
 		return new AutoConfigurationEntry(configurations, exclusions);
 	}
 
@@ -387,11 +404,13 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 		}
 
 		@Override
+		//这里用来处理自动配置类.
 		public void process(AnnotationMetadata annotationMetadata, DeferredImportSelector deferredImportSelector) {
 			Assert.state(deferredImportSelector instanceof AutoConfigurationImportSelector,
 					() -> String.format("Only %s implementations are supported, got %s",
 							AutoConfigurationImportSelector.class.getSimpleName(),
 							deferredImportSelector.getClass().getName()));
+			//通过AutoConfigurationImportSelector的实例，获取到所有的自动配置类的全类名
 			AutoConfigurationEntry autoConfigurationEntry = ((AutoConfigurationImportSelector) deferredImportSelector)
 					.getAutoConfigurationEntry(getAutoConfigurationMetadata(), annotationMetadata);
 			this.autoConfigurationEntries.add(autoConfigurationEntry);
