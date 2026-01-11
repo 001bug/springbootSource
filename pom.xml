@@ -9,7 +9,10 @@
 	<packaging>pom</packaging>
 	<name>Spring Boot Build</name>
 	<description>Spring Boot Build</description>
-	<properties>
+    <modules>
+        <module>zdy-spring-boot-starter</module>
+    </modules>
+    <properties>
 		<revision>2.2.9.RELEASE</revision>
 		<main.basedir>${basedir}</main.basedir>
 		<disable.checks>true</disable.checks>

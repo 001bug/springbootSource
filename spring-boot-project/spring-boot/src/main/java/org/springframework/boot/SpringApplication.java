@@ -395,7 +395,7 @@ public class SpringApplication {
 		context.setEnvironment(environment);
 		//执行容器后置处理
 		postProcessApplicationContext(context);
-		//执行容器中的ApplicationContextInitializer 包括spring.factories和通过三种方式定义的
+		//执行容器中的ApplicationContextInitializer 包括spring.factories和通过第三方定义的
 		applyInitializers(context);
 		//向各个监听器发送容器已经准备好的事件
 		listeners.contextPrepared(context);
@@ -416,6 +416,7 @@ public class SpringApplication {
 					.setAllowBeanDefinitionOverriding(this.allowBeanDefinitionOverriding);
 		}
 		if (this.lazyInitialization) {
+			//把所有飞机除设施Bean标记为懒加载,缩短了启动时间,但是把初始化错误推迟到首次使用,可设置
 			context.addBeanFactoryPostProcessor(new LazyInitializationBeanFactoryPostProcessor());
 		}
 		// Load the sources
@@ -455,7 +456,7 @@ public class SpringApplication {
 	}
 
 	private <T> Collection<T> getSpringFactoriesInstances(Class<T> type, Class<?>[] parameterTypes, Object... args) {
-		ClassLoader classLoader = getClassLoader();
+		ClassLoader classLoader = getClassLoader();//决定读的时哪个facotires配置文件
 		// Use names and ensure unique to protect against duplicates
 		//通过指定的classLoader从META-INF/spring.factories的资源文件中,读取key为type.getName()的value
 		Set<String> names = new LinkedHashSet<>(SpringFactoriesLoader.loadFactoryNames(type, classLoader));
@@ -721,7 +722,8 @@ public class SpringApplication {
 		if (logger.isDebugEnabled()) {
 			logger.debug("Loading source " + StringUtils.arrayToCommaDelimitedString(sources));
 		}
-		//创建BeanDefinitionLoader, 该类的作用是加载Bean定义信息,并将其注册到BeanDefinitionRegistry中
+		//创建BeanDefinitionLoader, 该加载器负责根据不同类型的source(xml,Class,主路径注解等),决定用哪种Reader去读取BeanDefinition并注册到BeanDefinitionRegister
+		//获得注册表就是工厂类转型
 		BeanDefinitionLoader loader = createBeanDefinitionLoader(getBeanDefinitionRegistry(context), sources);
 		if (this.beanNameGenerator != null) {
 			loader.setBeanNameGenerator(this.beanNameGenerator);

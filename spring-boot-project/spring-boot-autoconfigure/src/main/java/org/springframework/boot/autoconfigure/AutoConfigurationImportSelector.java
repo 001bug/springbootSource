@@ -70,6 +70,8 @@ import org.springframework.util.StringUtils;
  * @see EnableAutoConfiguration
  */
 //可以将所有符合条件的@Configuration配置都加载到当前SpringBoot并创建相应的Bean到ioc容器中
+//XxxAware是一种回调接口约定, ，意思是“让这个 bean 知道/获悉 Xxx”。实现某个 *Aware 接口后，
+// Spring 会在 bean 初始化时把相关依赖注入进去（通过setter 回调），例如：                                                                                                                                                                                                                                                                                                     - BeanClassLoaderAware：注入创建该 bean 所用的 ClassLoader。
 public class AutoConfigurationImportSelector implements DeferredImportSelector, BeanClassLoaderAware,
 		ResourceLoaderAware, BeanFactoryAware, EnvironmentAware, Ordered {
 
@@ -118,7 +120,7 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 		//获得注解@EnableAutoConfiguration(或其子类注解)上的所有属性信息.
 		//比如: @SpringbootApplication(exclude={DataSourceAutoConfiguration.class}),将会获得exclude的值
 		AnnotationAttributes attributes = getAttributes(annotationMetadata);
-		//得到spring.factories文件配置的所有自动配置类
+		//得到spring.factories文件配置的所有自动配置类,找键位org.springframework.boot.autoconfigure.EnableAutoConfiguration的配置项
 		List<String> configurations = getCandidateConfigurations(annotationMetadata, attributes);
 		//移除重复的自动配置类
 		configurations = removeDuplicates(configurations);
@@ -255,6 +257,17 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 		String[] excludes = getEnvironment().getProperty(PROPERTY_NAME_AUTOCONFIGURE_EXCLUDE, String[].class);
 		return (excludes != null) ? Arrays.asList(excludes) : Collections.emptyList();
 	}
+	/*
+	* • 在同一个调用栈里，这一步用 AutoConfigurationImportFilter 做第二轮条件过滤，提前把不满足条件的自动配置类剔掉，
+	* 核心流程在 spring-boot-autoconfigure/src/main/java/org/springframework/boot/autoconfigure/AutoConfigurationImportSelector.java:262-302：
+	*- 把 configurations 转成数组 candidates，准备一个 skip[] 标记。
+	* - 通过 getAutoConfigurationImportFilters() 从 META-INF/spring.factories 取出所有过滤器（默认是 OnBeanCondition、OnClassCondition、
+	* OnWebApplicationCondition，可见 spring-boot-autoconfigure/src/main/resources/META-INF/spring.factories）。
+	*  - 对每个过滤器先注入 BeanFactory/Environment/ClassLoader 等 Aware 依赖，然后调用 filter.match(candidates, autoConfigurationMetadata)。
+	* 这里的autoConfigurationMetadata 就是 spring-autoconfigure-metadata.properties，用它避免反射/类加载。
+	* - match 返回一个与 candidates 等长的 boolean[]；为 false 的候选被标记为 skip 并置空。
+	* - 如果有跳过，最后组装未被 skip 的配置类列表返回；否则直接返回原列表。                                                                                                                                                                                                                                                    效果：在真正注册配置类之前，根据条件注解（如 @ConditionalOnClass/@ConditionalOnBean/Web 环境要求等）和预生成的元数据，快速过滤掉不可能生效的自动配置类，减   少后续开销。
+	* */
 	//configurations从spring.factories中获取的所有自动配置类
 	//autoConfigurationMetadata是通过读取META-INF/spring-autoconfigure-metadata.properties文件
 	private List<String> filter(List<String> configurations, AutoConfigurationMetadata autoConfigurationMetadata) {

@@ -72,6 +72,7 @@ class ServletWebServerFactoryConfiguration {
 				ObjectProvider<TomcatConnectorCustomizer> connectorCustomizers,
 				ObjectProvider<TomcatContextCustomizer> contextCustomizers,
 				ObjectProvider<TomcatProtocolHandlerCustomizer<?>> protocolHandlerCustomizers) {
+			//实例化一个工厂. 添加到容器中
 			TomcatServletWebServerFactory factory = new TomcatServletWebServerFactory();
 			factory.getTomcatConnectorCustomizers()
 					.addAll(connectorCustomizers.orderedStream().collect(Collectors.toList()));
